@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-   DATABASE_URL: str = os.getenv("DATABASE_URL") 
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
     APP_NAME: str = "Rake Formation Decision Support System"
     APP_VERSION: str = "1.0.0"
 
