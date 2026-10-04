@@ -17,6 +17,7 @@ from app.routers.rake_plans import router as rake_plans_router
 from app.routers.approvals import router as approvals_router
 from app.routers.users import router as users_router
 from app.routers.recommendations import router as recommendations_router
+from app.routers.analytics import router as analytics_router
 
 from app.utils.logger import logger
 
@@ -70,6 +71,7 @@ app.include_router(rake_plans_router)
 app.include_router(approvals_router)
 app.include_router(users_router)
 app.include_router(recommendations_router)
+app.include_router(analytics_router)
 
 # Validation Error Handler
 @app.exception_handler(RequestValidationError)

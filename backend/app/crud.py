@@ -290,3 +290,14 @@ def update_approval_decision(
     db.commit()
     db.refresh(approval)
     return approval
+
+
+def get_rake_plan(db: Session, plan_id: int) -> models.RakePlan | None:
+    return db.query(models.RakePlan).filter(models.RakePlan.id == plan_id).first()
+
+
+def get_rake_plan_with_assignments(db: Session, plan_id: int) -> models.RakePlan | None:
+    plan = db.query(models.RakePlan).filter(models.RakePlan.id == plan_id).first()
+    if plan is not None:
+        _ = plan.assignments
+    return plan

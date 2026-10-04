@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Date, Float, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Date, Float, Boolean, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -94,6 +95,27 @@ class RakePlan(Base):
     objective = Column(String, nullable=False)
     status = Column(String, default="draft")
     created_at = Column(DateTime, server_default=func.now())
+    assignments = relationship("RakeAssignment", back_populates="rake_plan")
+
+
+class RakeAssignment(Base):
+    __tablename__ = "rake_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rake_plan_id = Column(Integer, ForeignKey("rake_plans.id"), nullable=False, index=True)
+    order_id = Column(Integer, ForeignKey("orders.order_id"), nullable=False, index=True)
+    wagon_id = Column(Integer, ForeignKey("wagons.id"), nullable=False, index=True)
+    plant_id = Column(Integer, ForeignKey("plants.id"), nullable=False, index=True)
+    origin = Column(String, nullable=False)
+    destination = Column(String, nullable=False)
+    departure_time = Column(DateTime, nullable=False)
+    arrival_time = Column(DateTime, nullable=False)
+    quantity_tons = Column(Float, nullable=False)
+    estimated_cost = Column(Float, nullable=False, default=0.0)
+    status = Column(String, nullable=False, default="planned")
+    created_at = Column(DateTime, server_default=func.now())
+
+    rake_plan = relationship("RakePlan", back_populates="assignments")
 
 
 # -------------------- Users --------------------

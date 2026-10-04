@@ -226,3 +226,52 @@ class RecommendationResponse(BaseModel):
     reason: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ==========================================================
+# Rake Assignment and Planning
+# ==========================================================
+
+class RakeAssignmentBase(BaseModel):
+    rake_plan_id: int
+    order_id: int
+    wagon_id: int
+    plant_id: int
+    origin: str
+    destination: str
+    departure_time: datetime
+    arrival_time: datetime
+    quantity_tons: float
+    estimated_cost: float = 0.0
+    status: str = "planned"
+
+
+class RakeAssignmentCreate(RakeAssignmentBase):
+    pass
+
+
+class RakeAssignment(RakeAssignmentBase):
+    id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RakePlanWithAssignments(RakePlan):
+    assignments: list[RakeAssignment] = Field(default_factory=list)
+
+
+class RakePlanGenerateRequest(BaseModel):
+    order_ids: list[int] = Field(min_length=1)
+    planning_horizon_days: int = Field(default=7, ge=1, le=365)
+    optimization_mode: str = "balanced"
+
+
+class KPIResponse(BaseModel):
+    plan_id: int | None = None
+    total_orders: int
+    total_assignments: int
+    wagons_used: int
+    total_quantity_tons: float
+    total_estimated_cost: float
+    average_wagon_utilization_percent: float
