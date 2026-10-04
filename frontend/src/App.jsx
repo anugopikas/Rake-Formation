@@ -39,21 +39,21 @@ function AppRouter() {
     }
   }, [user]);
 
-  const handleLogin = (email, password) => {
+  const handleLogin = (email, password, role) => {
     if (!email || !password) {
       notify({ type: 'warning', message: 'Please enter both email and password.' });
       return;
     }
 
-    const account = authenticateUser(email, password);
+    const account = authenticateUser(email, password, role);
     if (!account) {
-      notify({ type: 'error', message: 'Invalid email or password. Please try again.' });
+      notify({ type: 'error', message: 'Email, password, or selected role does not match this account.' });
       return;
     }
 
     setUser(account);
     notify({ type: 'success', message: `Welcome back, ${account.name.split(' ')[0]}.` });
-    navigate('/dashboard');
+    navigate(account.role === 'Approver' ? '/approvals' : account.role === 'Planner' ? '/rake-plans' : '/dashboard');
   };
 
   const handleLogout = () => {

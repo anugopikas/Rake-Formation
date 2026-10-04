@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Boxes, Building2, Eye, EyeOff, LockKeyhole, Mail, MapPin, Route, ShieldCheck, TrainFront, Zap } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../api';
 import BrandLogo from '../components/brand/BrandLogo';
 
@@ -12,7 +12,8 @@ const highlights = [
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '', remember: true });
+  const location = useLocation();
+  const [form, setForm] = useState({ email: '', password: '', role: location.state?.role || 'Operations Analyst', remember: true });
   const [showPassword, setShowPassword] = useState(false);
   const [metrics, setMetrics] = useState({ orders: 'N/A', fleet: 'N/A', plans: 'N/A' });
 
@@ -34,7 +35,7 @@ export default function Login({ onLogin }) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    onLogin(form.email, form.password);
+    onLogin(form.email, form.password, form.role);
   };
 
   return (
@@ -98,6 +99,17 @@ export default function Login({ onLogin }) {
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
+            <label>
+              <span>Sign in as</span>
+              <select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}>
+                <option>Operations Analyst</option>
+                <option>Logistics Manager</option>
+                <option>Planner</option>
+                <option>Approver</option>
+                <option>Operations Manager</option>
+              </select>
+            </label>
+
             <label>
               <span>Email / Username</span>
               <div className="input-with-icon">

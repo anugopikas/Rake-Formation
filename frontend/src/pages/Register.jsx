@@ -61,7 +61,7 @@ export default function Register() {
       });
 
       notify({ type: 'success', message: 'Account created successfully.' });
-      navigate('/login');
+      navigate('/login', { state: { role: form.role } });
     } catch (err) {
       setError(err.message || 'Unable to create account.');
       notify({ type: 'error', message: err.message || 'Unable to create account.' });
@@ -156,6 +156,7 @@ export default function Register() {
                 <option>Logistics Manager</option>
                 <option>Planner</option>
                 <option>Approver</option>
+                <option>Operations Manager</option>
               </select>
             </label>
 

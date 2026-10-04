@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8001";
 
 async function apiRequest(path, { method = "GET", body, headers } = {}) {
   const options = {
@@ -16,17 +16,9 @@ async function apiRequest(path, { method = "GET", body, headers } = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
   const contentType = response.headers.get("content-type") || "";
 
-  let payload = null;
-
-  if (contentType.includes("application/json")) {
-    try {
-      payload = await response.json();
-    } catch {
-      payload = null;
-    }
-  } else {
-    payload = await response.text();
-  }
+  const payload = contentType.includes("application/json")
+    ? await response.json().catch(() => ({ message: response.statusText }))
+    : await response.text();
 
   if (!response.ok) {
     const detail = payload?.detail;

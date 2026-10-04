@@ -66,7 +66,7 @@ export function getPasswordStrength(password = '') {
   return { score, label: 'Strong' };
 }
 
-export function authenticateUser(email, password) {
+export function authenticateUser(email, password, role) {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const normalizedPassword = String(password || '');
 
@@ -82,7 +82,7 @@ export function authenticateUser(email, password) {
     return (sameEmail || sameUsername) && validPassword;
   });
 
-  if (match) {
+  if (match && (!role || match.role === role)) {
     return {
       id: match.id,
       name: match.name,
@@ -95,7 +95,7 @@ export function authenticateUser(email, password) {
   }
 
   const demoUser = getDemoUser();
-  if (normalizedEmail === demoUser.email.toLowerCase() && normalizedPassword === demoUser.password) {
+  if (normalizedEmail === demoUser.email.toLowerCase() && normalizedPassword === demoUser.password && (!role || demoUser.role === role)) {
     return {
       id: demoUser.id,
       name: demoUser.name,

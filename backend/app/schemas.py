@@ -203,6 +203,11 @@ class Approval(ApprovalBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ApprovalDecisionUpdate(BaseModel):
+    decision: str = Field(pattern="^(pending|approved|rejected)$")
+    comments: Optional[str] = None
+
+
 # ==========================================================
 # AI Recommendation
 # ==========================================================

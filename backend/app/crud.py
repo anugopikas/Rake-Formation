@@ -262,10 +262,31 @@ def list_approvals(
     db: Session,
     skip: int = 0,
     limit: int = 100,
+    decision: str | None = None,
 ) -> list[models.Approval]:
+    query = db.query(models.Approval)
+    if decision:
+        query = query.filter(models.Approval.decision.ilike(decision))
     return (
-        db.query(models.Approval)
+        query
         .offset(skip)
         .limit(limit)
         .all()
     )
+
+
+def update_approval_decision(
+    db: Session,
+    approval_id: int,
+    decision: str,
+    comments: str | None = None,
+) -> models.Approval | None:
+    approval = db.query(models.Approval).filter(models.Approval.id == approval_id).first()
+    if approval is None:
+        return None
+    approval.decision = decision
+    if comments is not None:
+        approval.comments = comments
+    db.commit()
+    db.refresh(approval)
+    return approval
