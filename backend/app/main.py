@@ -18,6 +18,8 @@ from app.routers.approvals import router as approvals_router
 from app.routers.users import router as users_router
 from app.routers.recommendations import router as recommendations_router
 from app.routers.analytics import router as analytics_router
+from app.routers.forecast import router as forecast_router
+from app.routers.alerts import router as alerts_router
 
 from app.utils.logger import logger
 
@@ -39,7 +41,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,6 +81,8 @@ app.include_router(approvals_router)
 app.include_router(users_router)
 app.include_router(recommendations_router)
 app.include_router(analytics_router)
+app.include_router(forecast_router)
+app.include_router(alerts_router)
 
 # Validation Error Handler
 @app.exception_handler(RequestValidationError)

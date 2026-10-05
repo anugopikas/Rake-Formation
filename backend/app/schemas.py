@@ -23,6 +23,17 @@ class OrderCreate(OrderBase):
     pass
 
 
+class OrderUpdate(BaseModel):
+    customer_name: Optional[str] = None
+    material_name: Optional[str] = None
+    grade: Optional[str] = None
+    quantity: Optional[int] = Field(default=None, gt=0)
+    destination: Optional[str] = None
+    priority: Optional[str] = None
+    delivery_date: Optional[date] = None
+    status: Optional[str] = None
+
+
 class Order(OrderBase):
     order_id: int
 

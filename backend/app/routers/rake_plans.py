@@ -19,6 +19,14 @@ def list_rake_plans(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
     return crud.list_rake_plans(db=db, skip=skip, limit=limit)
 
 
+@router.get("/{plan_id}", response_model=schemas.RakePlanWithAssignments)
+def get_rake_plan(plan_id: int, db: Session = Depends(get_db_session)) -> schemas.RakePlanWithAssignments:
+    plan = crud.get_rake_plan_with_assignments(db=db, plan_id=plan_id)
+    if plan is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rake plan not found")
+    return plan
+
+
 @router.post("/generate", response_model=schemas.RakePlanWithAssignments, status_code=status.HTTP_201_CREATED)
 def generate_rake_plan(
     request: schemas.RakePlanGenerateRequest,

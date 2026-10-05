@@ -32,6 +32,30 @@ def list_orders(db: Session, skip: int = 0, limit: int = 100) -> list[models.Ord
     )
 
 
+def delete_order(db: Session, order_id: int) -> bool:
+    order = get_order(db, order_id)
+    if order is None:
+        return False
+    db.delete(order)
+    db.commit()
+    return True
+
+
+def update_order(
+    db: Session,
+    order_id: int,
+    order_update: schemas.OrderUpdate,
+) -> models.Order | None:
+    order = get_order(db, order_id)
+    if order is None:
+        return None
+    for field, value in order_update.model_dump(exclude_unset=True).items():
+        setattr(order, field, value)
+    db.commit()
+    db.refresh(order)
+    return order
+
+
 def update_order_status(
     db: Session,
     order_id: int,

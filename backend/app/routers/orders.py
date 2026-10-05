@@ -81,3 +81,37 @@ def get_order(
         )
 
     return order
+
+
+@router.patch(
+    "/{order_id}",
+    response_model=schemas.Order
+)
+def update_order(
+    order_id: int,
+    order_update: schemas.OrderUpdate,
+    db: Session = Depends(get_db_session)
+):
+    order = crud.update_order(db=db, order_id=order_id, order_update=order_update)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+    return order
+
+
+@router.delete(
+    "/{order_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_order(
+    order_id: int,
+    db: Session = Depends(get_db_session)
+) -> None:
+    deleted = crud.delete_order(db=db, order_id=order_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
