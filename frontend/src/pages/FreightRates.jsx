@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { apiRequest } from '../api';
 import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
 import StatusBadge from '../components/common/StatusBadge';
+import ResourceCreateModal from '../components/common/ResourceCreateModal';
 
 function FreightRates() {
   const [rates, setRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     async function loadRates() {
@@ -30,6 +33,7 @@ function FreightRates() {
           <p className="eyebrow">Pricing</p>
           <h1>Freight Rates</h1>
         </div>
+        <button type="button" className="btn btn-primary" onClick={() => setShowCreate(true)}><Plus size={16} />Add Freight Rate</button>
       </div>
 
       {error ? <div className="notice notice--error">{error}</div> : null}
@@ -69,6 +73,21 @@ function FreightRates() {
           </table>
         </div>
       ) : null}
+      <ResourceCreateModal
+        open={showCreate}
+        title="Add Freight Rate"
+        endpoint="/freight-rates/"
+        successMessage="Freight rate created successfully."
+        onClose={() => setShowCreate(false)}
+        onCreated={(rate) => setRates((current) => [...current, rate])}
+        fields={[
+          { name: 'route_code', label: 'Route code' },
+          { name: 'origin', label: 'Origin' },
+          { name: 'destination', label: 'Destination' },
+          { name: 'rate_per_ton', label: 'Rate per ton', type: 'number', min: 0.01 },
+          { name: 'effective_from', label: 'Effective from', type: 'datetime-local' },
+        ]}
+      />
     </div>
   );
 }

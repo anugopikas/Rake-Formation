@@ -1,79 +1,117 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../api';
-import StatusBadge from '../components/common/StatusBadge';
-import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
-
-const initialRecommendations = [
-  { id: 1, type: 'Demand', reason: 'Forecasted traffic spike in Q3', impact: '+8.4% throughput', priority: 'High', confidence: '92%', action: 'Increase stock allocation by 12%' },
-  { id: 2, type: 'Inventory', reason: 'Two plants operating below reorder threshold', impact: 'Reduce shortage risk', priority: 'Critical', confidence: '89%', action: 'Rebalance stock between lines' },
-  { id: 3, type: 'Rake Planning', reason: 'Night service can absorb 4 extra wagons', impact: 'Higher utilization', priority: 'Medium', confidence: '87%', action: 'Reschedule next rake' },
-];
+import LoadingState from '../components/common/LoadingState';
+import { notify } from '../utils/toast';
 
 function Recommendations() {
-  const [recommendations, setRecommendations] = useState(initialRecommendations);
-  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [orderId, setOrderId] = useState('');
+  const [recommendation, setRecommendation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    async function loadRecommendations() {
+    async function loadOrders() {
       try {
-        const data = await apiRequest('/recommendations/', { method: 'POST', body: { order_id: 1 } });
-        if (data) {
-          setRecommendations([{
-            id: data.order_id,
-            type: 'Optimization',
-            reason: data.reason || 'Operational recommendation from the planning engine',
-            impact: `${Number(data.estimated_cost || 0).toLocaleString()} cost impact`,
-            priority: 'High',
-            confidence: '91%',
-            action: 'Review allocation plan',
-          }, ...initialRecommendations]);
-        }
-      } catch {
-        setRecommendations(initialRecommendations);
+        const data = await apiRequest('/orders/');
+        const availableOrders = Array.isArray(data) ? data : [];
+        setOrders(availableOrders);
+        setOrderId((current) => current || String(availableOrders[0]?.order_id || ''));
+        setError('');
+      } catch (err) {
+        setError(err.message || 'Unable to load orders for recommendations.');
       } finally {
         setLoading(false);
       }
     }
-
-    loadRecommendations();
+    loadOrders();
   }, []);
+
+  async function generateRecommendation(event) {
+    event.preventDefault();
+    if (!orderId) {
+      setError('Select an order before generating a recommendation.');
+      return;
+    }
+    setGenerating(true);
+    setError('');
+    setRecommendation(null);
+    try {
+      const result = await apiRequest('/recommendations/', {
+        method: 'POST',
+        body: { order_id: Number(orderId) },
+      });
+      setRecommendation(result);
+      notify({ type: 'success', message: 'Recommendation generated successfully.' });
+    } catch (err) {
+      setError(err.message || 'Unable to generate a recommendation.');
+      notify({ type: 'error', message: err.message || 'Unable to generate a recommendation.' });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  if (loading) return <LoadingState title="Loading orders" subtitle="Preparing recommendation options." />;
 
   return (
     <div className="page-stack">
       <div className="page-header-row">
         <div>
-          <p className="eyebrow">Decision support</p>
-          <h1>AI Recommendations</h1>
-          <p className="subtext">Actionable insights derived from planning and operational data.</p>
+          <p className="eyebrow">Decision Support</p>
+          <h1>Rake Recommendations</h1>
+          <p className="subtext">Generate a backend-validated formation recommendation for an order.</p>
         </div>
       </div>
 
-      {loading ? <LoadingState title="Loading recommendations" subtitle="Assessing planning signals and demand data." /> : null}
-      {!loading && !recommendations.length ? (
-        <EmptyState title="No recommendations available." description="The planning engine has not generated any current suggestions." />
-      ) : null}
+      {error ? <div className="notice notice--error" role="alert">{error}</div> : null}
 
-      {!loading && recommendations.length ? (
-        <div className="card-grid recommendation-grid">
-          {recommendations.map((recommendation) => (
-            <div key={recommendation.id} className="detail-card recommendation-card">
-              <div className="detail-card__top">
-                <div>
-                  <p className="eyebrow">{recommendation.type}</p>
-                  <h3>{recommendation.reason}</h3>
-                </div>
-                <StatusBadge label={recommendation.priority} tone={recommendation.priority === 'Critical' ? 'critical' : recommendation.priority === 'High' ? 'high' : 'warning'} />
-              </div>
-              <p className="recommendation-impact">Impact: {recommendation.impact}</p>
-              <p className="recommendation-meta">Confidence: {recommendation.confidence}</p>
-              <div className="recommendation-action">
-                <span>Recommended action</span>
-                <strong>{recommendation.action}</strong>
-              </div>
-            </div>
-          ))}
-        </div>
+      {!orders.length ? (
+        <EmptyState title="No orders available" description="Create an order before requesting a rake recommendation." />
+      ) : (
+        <form className="panel-card form-grid" onSubmit={generateRecommendation}>
+          <label className="field">
+            <span>Order</span>
+            <select value={orderId} onChange={(event) => setOrderId(event.target.value)} required>
+              {orders.map((order) => (
+                <option key={order.order_id} value={order.order_id}>
+                  #{order.order_id} · {order.customer_name} · {order.material_name} · {Number(order.quantity).toLocaleString()} tons
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="field field--actions">
+            <span aria-hidden="true">&nbsp;</span>
+            <button className="btn btn-primary" type="submit" disabled={generating || !orderId}>
+              {generating ? 'Generating…' : 'Generate recommendation'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {generating ? <LoadingState title="Optimizing formation" subtitle="Checking capacity, routes, and freight rates." /> : null}
+
+      {recommendation ? (
+        <section className="panel-card page-stack" aria-live="polite">
+          <div>
+            <p className="eyebrow">Backend recommendation</p>
+            <h2>Order #{recommendation.order_id}</h2>
+          </div>
+          <div className="stats-row">
+            <div><span>Plant</span><strong>{recommendation.recommended_plant || '—'}</strong></div>
+            <div><span>Route</span><strong>{[recommendation.origin, recommendation.destination].filter(Boolean).join(' → ') || '—'}</strong></div>
+            <div><span>Quantity</span><strong>{recommendation.quantity != null ? `${Number(recommendation.quantity).toLocaleString()} tons` : '—'}</strong></div>
+            <div><span>Wagons required</span><strong>{recommendation.allocated_wagons ?? '—'}</strong></div>
+            <div><span>Estimated cost</span><strong>{recommendation.estimated_cost != null ? Number(recommendation.estimated_cost).toLocaleString(undefined, { style: 'currency', currency: 'INR' }) : '—'}</strong></div>
+            <div><span>Estimated time</span><strong>{recommendation.estimated_time || '—'}</strong></div>
+          </div>
+          <p><strong>Decision:</strong> {recommendation.decision || '—'}</p>
+          {recommendation.reason ? <p>{recommendation.reason}</p> : null}
+          {Array.isArray(recommendation.warnings) && recommendation.warnings.length ? (
+            <div className="notice notice--warning">{recommendation.warnings.join(' ')}</div>
+          ) : null}
+        </section>
       ) : null}
     </div>
   );

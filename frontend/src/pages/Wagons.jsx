@@ -3,11 +3,13 @@ import { apiRequest } from '../api';
 import StatusBadge from '../components/common/StatusBadge';
 import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
+import ResourceCreateModal from '../components/common/ResourceCreateModal';
 
 function Wagons() {
   const [wagons, setWagons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     async function loadWagons() {
@@ -31,6 +33,7 @@ function Wagons() {
           <h1>Wagon Fleet</h1>
           <p className="subtext">Monitor availability and allocation across the fleet.</p>
         </div>
+        <button type="button" className="btn btn-primary" onClick={() => setShowCreate(true)}>Add Wagon</button>
       </div>
 
       <div className="summary-grid summary-grid--four">
@@ -75,6 +78,20 @@ function Wagons() {
           </table>
         </div>
       ) : null}
+      <ResourceCreateModal
+        open={showCreate}
+        title="Add Wagon"
+        endpoint="/wagons/"
+        successMessage="Wagon created successfully."
+        onClose={() => setShowCreate(false)}
+        onCreated={(wagon) => setWagons((current) => [...current, wagon])}
+        fields={[
+          { name: 'wagon_number', label: 'Wagon number' },
+          { name: 'wagon_type', label: 'Wagon type' },
+          { name: 'max_capacity_tons', label: 'Maximum capacity (tons)', type: 'number', min: 0.01 },
+          { name: 'available', label: 'Availability', type: 'boolean', defaultValue: 'true', options: [{ value: 'true', label: 'Available' }, { value: 'false', label: 'Unavailable' }] },
+        ]}
+      />
     </div>
   );
 }

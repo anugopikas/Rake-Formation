@@ -3,11 +3,13 @@ import { apiRequest } from '../api';
 import StatusBadge from '../components/common/StatusBadge';
 import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
+import ResourceCreateModal from '../components/common/ResourceCreateModal';
 
 function Plants() {
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     async function loadPlants() {
@@ -31,6 +33,7 @@ function Plants() {
           <h1>Plants</h1>
           <p className="subtext">Overview of plant production capacity and operating status.</p>
         </div>
+        <button type="button" className="btn btn-primary" onClick={() => setShowCreate(true)}>Add Plant</button>
       </div>
 
       {error ? <div className="notice notice--error">{error}</div> : null}
@@ -60,6 +63,21 @@ function Plants() {
           ))}
         </div>
       ) : null}
+      <ResourceCreateModal
+        open={showCreate}
+        title="Add Plant"
+        endpoint="/plants/"
+        successMessage="Plant created successfully."
+        onClose={() => setShowCreate(false)}
+        onCreated={(plant) => setPlants((current) => [...current, plant])}
+        fields={[
+          { name: 'plant_code', label: 'Plant code' },
+          { name: 'plant_name', label: 'Plant name' },
+          { name: 'region', label: 'Region' },
+          { name: 'capacity_tons', label: 'Capacity (tons)', type: 'number', min: 0.01 },
+          { name: 'active', label: 'Status', type: 'boolean', defaultValue: 'true', options: [{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }] },
+        ]}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import StatusBadge from '../components/common/StatusBadge';
 import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
+import { notify } from '../utils/toast';
 
 const emptyItem = {
   item_code: '',
@@ -117,8 +118,10 @@ function Inventory() {
               setItems((current) => [...current, created]);
               setDraft(emptyItem);
               setShowCreate(false);
+              notify({ type: 'success', message: 'Inventory item created successfully.' });
             } catch (err) {
               setError(err.message || 'Unable to add inventory.');
+              notify({ type: 'error', message: err.message || 'Unable to add inventory.' });
             } finally {
               setSaving(false);
             }

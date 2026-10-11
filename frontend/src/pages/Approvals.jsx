@@ -4,40 +4,61 @@ import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
 import StatusBadge from '../components/common/StatusBadge';
 import Modal from '../components/common/Modal';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import { notify } from '../utils/toast';
 
 function Approvals() {
   const [approvals, setApprovals] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
   const [selected, setSelected] = useState(null);
   const [relatedOrder, setRelatedOrder] = useState(null);
+  const [relatedOrderError, setRelatedOrderError] = useState('');
   const [orderLoading, setOrderLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(false);
+
+  async function loadApprovals() {
+    setLoading(true);
+    try {
+      const data = await apiRequest('/approvals/');
+      setApprovals(Array.isArray(data) ? data : []);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Unable to load approvals.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadApprovals() {
-      try {
-        const data = await apiRequest('/approvals/');
-        setApprovals(Array.isArray(data) ? data : []);
-        setError('');
-      } catch (err) {
-        setError(err.message || 'Unable to load approvals.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadApprovals();
+    let active = true;
+    apiRequest('/approvals/')
+      .then((data) => {
+        if (active) {
+          setApprovals(Array.isArray(data) ? data : []);
+          setError('');
+        }
+      })
+      .catch((err) => {
+        if (active) setError(err.message || 'Unable to load approvals.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
   async function openDetails(item) {
     setSelected(item);
     setRelatedOrder(null);
+    setRelatedOrderError('');
     setOrderLoading(true);
     try {
       setRelatedOrder(await apiRequest(`/orders/${item.order_id}`));
-    } catch {
-      // Keep the approval details available if its related order was removed.
+    } catch (err) {
+      setRelatedOrderError(err.message || 'Unable to load the related order.');
     } finally {
       setOrderLoading(false);
     }
@@ -57,11 +78,14 @@ function Approvals() {
         method: 'PATCH',
         body: { decision },
       });
-      setApprovals((current) => current.map((item) => item.id === updated.id ? updated : item));
       setSelected(updated);
       setActiveTab(decision);
+      setConfirmReject(false);
+      await loadApprovals();
+      notify({ type: 'success', message: `Approval ${decision} successfully.` });
     } catch (err) {
       setError(err.message || 'Unable to update this approval.');
+      notify({ type: 'error', message: err.message || 'Unable to update this approval.' });
     } finally {
       setSaving(false);
     }
@@ -121,7 +145,7 @@ function Approvals() {
         </div>
       ) : null}
 
-      <Modal open={Boolean(selected)} title={`Approval request REQ-${selected?.id ?? ''}`} onClose={() => { setSelected(null); setRelatedOrder(null); }}>
+      <Modal open={Boolean(selected)} title={`Approval request REQ-${selected?.id ?? ''}`} onClose={() => { if (!saving) { setSelected(null); setRelatedOrder(null); setRelatedOrderError(''); } }}>
         {selected ? (
           <div className="page-stack">
             <div className="stats-row">
@@ -132,6 +156,7 @@ function Approvals() {
               <div><span>Status</span><strong>{selected.decision || 'Pending'}</strong></div>
             </div>
             {orderLoading ? <LoadingState title="Loading related order" subtitle="Getting the order linked to this approval." /> : null}
+            {relatedOrderError ? <div className="notice notice--error">{relatedOrderError}</div> : null}
             {relatedOrder ? (
               <div className="panel-card">
                 <p className="eyebrow">Related order details</p>
@@ -149,12 +174,21 @@ function Approvals() {
             {String(selected.decision || 'pending').toLowerCase() === 'pending' ? (
               <div className="button-row">
                 <button type="button" className="btn btn-primary" disabled={saving} onClick={() => updateDecision('approved')}>{saving ? 'Saving…' : 'Approve'}</button>
-                <button type="button" className="btn btn-ghost" disabled={saving} onClick={() => updateDecision('rejected')}>Reject</button>
+                <button type="button" className="btn btn-ghost" disabled={saving} onClick={() => setConfirmReject(true)}>Reject</button>
               </div>
             ) : null}
           </div>
         ) : null}
       </Modal>
+      <ConfirmDialog
+        open={confirmReject}
+        title="Reject this approval?"
+        message="This will record the request as rejected. You can’t undo this decision."
+        confirmLabel={saving ? 'Rejecting…' : 'Reject request'}
+        disabled={saving}
+        onCancel={() => { if (!saving) setConfirmReject(false); }}
+        onConfirm={() => updateDecision('rejected')}
+      />
     </div>
   );
 }

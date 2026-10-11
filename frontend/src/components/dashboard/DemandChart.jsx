@@ -1,37 +1,68 @@
-import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-export default function DemandChart({ data }) {
+export default function DemandChart({ data, loading = false, notice = '' }) {
   return (
     <div className="chart-card">
       <div className="section-header">
         <div>
-          <p className="eyebrow">Forecast</p>
+          <p className="eyebrow">AI Demand Forecast</p>
           <h3>Demand Forecast</h3>
         </div>
       </div>
-      {data.length ? <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id="historicalFill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02} />
-              </linearGradient>
-              <linearGradient id="forecastFill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="5%" stopColor="#0f172a" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#0f172a" stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dfe7f3" />
-            <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-            <Tooltip />
-            <Legend />
-            <Area type="monotone" dataKey="historical" stroke="#2563eb" fill="url(#historicalFill)" strokeWidth={2.5} name="Historical Demand" />
-            <Area type="monotone" dataKey="forecast" stroke="#0f172a" fill="url(#forecastFill)" strokeWidth={2.5} name="Forecast Demand" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div> : <div className="chart-empty">Forecast data is not available from the connected API yet.</div>}
+      {notice ? <p className="dashboard-data-notice">{notice}</p> : null}
+      {loading ? (
+        <div className="chart-loading" role="status" aria-label="Loading demand forecast">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+      ) : (
+        <div className="chart-wrap">
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dfe7f3" />
+              <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                tickFormatter={(value) => Number(value).toLocaleString()}
+              />
+              <Tooltip
+                labelFormatter={(label) => `Date: ${label}`}
+                formatter={(value, name) => [Number(value).toLocaleString(), name]}
+                contentStyle={{ borderRadius: 10, borderColor: '#dfe7f3' }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="actual"
+                stroke="#2563eb"
+                strokeWidth={2.5}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+                connectNulls
+                name="Actual Demand"
+              />
+              <Line
+                type="monotone"
+                dataKey="forecast"
+                stroke="#0f172a"
+                strokeWidth={2.5}
+                strokeDasharray="6 4"
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+                name="Forecast Demand"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      <p className="chart-caption">Forecast based on historical order and inventory patterns.</p>
     </div>
   );
 }

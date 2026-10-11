@@ -1,4 +1,4 @@
-export default function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', onConfirm, onCancel }) {
+export default function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', onConfirm, onCancel, disabled = false }) {
   if (!open) return null;
 
   return (
@@ -7,8 +7,8 @@ export default function ConfirmDialog({ open, title, message, confirmLabel = 'Co
         <h3>{title}</h3>
         <p>{message}</p>
         <div className="modal-actions">
-          <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
-          <button type="button" className="btn btn-danger" onClick={onConfirm}>{confirmLabel}</button>
+          <button type="button" className="btn btn-ghost" disabled={disabled} onClick={onCancel}>Cancel</button>
+          <button type="button" className="btn btn-danger" disabled={disabled} onClick={onConfirm}>{confirmLabel}</button>
         </div>
       </div>
     </div>

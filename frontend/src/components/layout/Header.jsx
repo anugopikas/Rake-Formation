@@ -1,5 +1,7 @@
 import { Bell, HelpCircle, Search, ChevronDown, LogOut } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../api';
+import { notify } from '../../utils/toast';
 
 const breadcrumbMap = {
   '/dashboard': 'Dashboard',
@@ -17,7 +19,15 @@ const breadcrumbMap = {
 
 export default function Header({ user, onLogout, searchValue, onSearchChange, compact = false }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentLabel = breadcrumbMap[location.pathname] || 'Dashboard';
+
+  function searchOrders(event) {
+    event.preventDefault();
+    const query = searchValue.trim();
+    if (!query) return;
+    navigate(`/orders?search=${encodeURIComponent(query)}`);
+  }
 
   return (
     <header className="topbar">
@@ -30,23 +40,26 @@ export default function Header({ user, onLogout, searchValue, onSearchChange, co
       </div>
 
       <div className="topbar__actions">
-        <div className="topbar__search">
+        <form className="topbar__search" onSubmit={searchOrders} role="search">
           <Search size={16} />
           <input
             type="text"
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search operations..."
-            aria-label="Global search"
+            placeholder="Search orders..."
+            aria-label="Search orders"
           />
-        </div>
+        </form>
 
-        <button type="button" className="icon-button" aria-label="Notifications">
+        <button type="button" className="icon-button" aria-label="Notifications" onClick={() => navigate('/approvals')}>
           <Bell size={18} />
           <span className="notification-dot" />
         </button>
 
-        <button type="button" className="icon-button" aria-label="Help">
+        <button type="button" className="icon-button" aria-label="Help" onClick={() => {
+          window.open(`${API_BASE_URL}/docs`, '_blank', 'noopener,noreferrer');
+          notify({ type: 'info', message: 'Opened the backend API documentation in a new tab.' });
+        }}>
           <HelpCircle size={18} />
         </button>
 
